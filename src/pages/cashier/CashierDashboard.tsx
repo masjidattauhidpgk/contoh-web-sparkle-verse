@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,7 @@ const CashierDashboard = () => {
       }
 
       console.log('CashierDashboard: Fetched orders:', data?.length || 0);
+      console.log('CashierDashboard: Sample order data:', data?.[0]);
       setOrders(data || []);
     } catch (error) {
       console.error('CashierDashboard: Error in fetchPendingOrders:', error);
@@ -189,6 +191,8 @@ const CashierDashboard = () => {
   };
 
   const toggleOrderDetails = (orderId: string) => {
+    console.log('CashierDashboard: Toggling details for order:', orderId);
+    console.log('CashierDashboard: Current expanded order:', expandedOrderId);
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
@@ -349,30 +353,37 @@ const CashierDashboard = () => {
 
                     {/* Expanded Order Details */}
                     {expandedOrderId === order.id && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-3">Detail Pesanan:</h4>
-                        <div className="space-y-2">
-                          {order.order_items?.map((item) => (
-                            <div key={item.id} className="flex justify-between items-center py-2 border-b">
-                              <div className="flex-1">
-                                <span className="font-medium">
-                                  {item.menu_items?.name || 'Unknown Item'}
-                                </span>
-                                <div className="text-sm text-gray-600">
-                                  {formatPrice(item.price)} × {item.quantity}
+                      <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                        <h4 className="font-medium mb-3 text-lg">Detail Pesanan:</h4>
+                        {order.order_items && order.order_items.length > 0 ? (
+                          <div className="space-y-3">
+                            {order.order_items.map((item, index) => (
+                              <div key={item.id || index} className="flex justify-between items-center py-3 border-b border-gray-200 last:border-b-0">
+                                <div className="flex-1">
+                                  <span className="font-medium text-base">
+                                    {item.menu_items?.name || 'Item Tidak Diketahui'}
+                                  </span>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    <span>Harga satuan: {formatPrice(item.price)}</span>
+                                    <span className="ml-4">Jumlah: {item.quantity}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-medium text-lg">
+                                    {formatPrice(item.price * item.quantity)}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <span className="font-medium">
-                                  {formatPrice(item.price * item.quantity)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-3 pt-3 border-t">
-                          <div className="flex justify-between items-center font-bold text-lg">
-                            <span>Total:</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4 text-gray-500">
+                            <p>Tidak ada detail item ditemukan</p>
+                          </div>
+                        )}
+                        <div className="mt-4 pt-4 border-t border-gray-300">
+                          <div className="flex justify-between items-center font-bold text-xl">
+                            <span>Total Pembayaran:</span>
                             <span className="text-orange-600">
                               {formatPrice(order.total_amount)}
                             </span>
