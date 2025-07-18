@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice, formatDate } from '@/utils/orderUtils';
-import { Search, User, Calendar, CreditCard, Receipt, Eye, EyeOff } from 'lucide-react';
+import { Search, User, Calendar, CreditCard, Receipt, Eye, EyeOff, Printer } from 'lucide-react';
 import { CashPayment } from '@/components/cashier/CashPayment';
 
 interface Order {
@@ -33,7 +32,7 @@ interface Order {
   } | null;
 }
 
-export const CashierDashboard = () => {
+const CashierDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -391,3 +390,5 @@ export const CashierDashboard = () => {
     </div>
   );
 };
+
+export default CashierDashboard;
