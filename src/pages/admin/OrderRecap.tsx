@@ -15,13 +15,13 @@ import { PrintButton } from '@/components/ui/print-button';
 import { RecapPrint } from '@/components/print/RecapPrint';
 import { DetailOrdersPrint } from '@/components/print/DetailOrdersPrint';
 
-interface RecapData {
+interface MenuRecapData {
   id: string;
   menu_name: string;
   quantity: number;
 }
 
-interface DetailedOrder {
+interface OrderDetailData {
   id: string;
   child_name: string;
   child_class: string;
@@ -31,6 +31,8 @@ interface DetailedOrder {
   kitchen_check: boolean;
   homeroom_check: boolean;
   delivery_date: string;
+  total_amount: number;
+  payment_status: string;
   order_items: {
     quantity: number;
     menu_items: { name: string } | null;
@@ -42,8 +44,8 @@ interface OrderRecapProps {
 }
 
 export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
-  const [recapData, setRecapData] = useState<RecapData[]>([]);
-  const [detailedOrders, setDetailedOrders] = useState<DetailedOrder[]>([]);
+  const [recapData, setRecapData] = useState<MenuRecapData[]>([]);
+  const [detailedOrders, setDetailedOrders] = useState<OrderDetailData[]>([]);
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [showRecapPrint, setShowRecapPrint] = useState(false);
@@ -103,6 +105,8 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
           child_name,
           child_class,
           delivery_date,
+          total_amount,
+          payment_status,
           order_items (
             quantity,
             menu_items (
@@ -142,7 +146,7 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
 
       // Process data for recap (group by menu name)
       const recapMap = new Map<string, number>();
-      const detailedOrdersData: DetailedOrder[] = [];
+      const detailedOrdersData: OrderDetailData[] = [];
 
       ordersData?.forEach(order => {
         order.order_items.forEach(item => {
@@ -166,6 +170,8 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
             kitchen_check: false, // Default values, can be extended later
             homeroom_check: false,
             delivery_date: order.delivery_date,
+            total_amount: order.total_amount || 0,
+            payment_status: order.payment_status || 'pending',
             order_items: [item]
           });
         });
