@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { formatPrice, formatDate } from '@/utils/orderUtils';
 import { PrintButton } from '@/components/ui/print-button';
-import { RecapPrint } from '@/components/print/RecapPrint';
+import { MenuRecapPrint } from '@/components/print/MenuRecapPrint';
 import { DetailOrdersPrint } from '@/components/print/DetailOrdersPrint';
 
 interface MenuRecapData {
@@ -540,7 +539,7 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
 
       {/* Print Components */}
       {showRecapPrint && (
-        <RecapPrint data={recapData} printerType={printType} />
+        <MenuRecapPrint data={recapData} printerType={printType} />
       )}
       
       {showDetailPrint && (
