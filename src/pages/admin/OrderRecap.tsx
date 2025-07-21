@@ -24,14 +24,9 @@ interface OrderDetailData {
   id: string;
   child_name: string;
   child_class: string;
-  menu_name: string;
-  item_code: string;
-  quantity: number;
-  kitchen_check: boolean;
-  homeroom_check: boolean;
-  delivery_date: string;
   total_amount: number;
   payment_status: string;
+  delivery_date: string;
   order_items: {
     quantity: number;
     menu_items: { name: string } | null;
@@ -84,13 +79,6 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
         variant: "destructive",
       });
     }
-  };
-
-  const generateItemCode = (menuName: string) => {
-    return menuName
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('');
   };
 
   const fetchData = async () => {
@@ -148,31 +136,25 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
       const detailedOrdersData: OrderDetailData[] = [];
 
       ordersData?.forEach(order => {
+        // For detailed orders - group by order, not by item
+        detailedOrdersData.push({
+          id: order.id,
+          child_name: order.child_name || '',
+          child_class: order.child_class || '',
+          total_amount: order.total_amount || 0,
+          payment_status: order.payment_status || 'pending',
+          delivery_date: order.delivery_date,
+          order_items: order.order_items
+        });
+
+        // For recap data - group by menu name
         order.order_items.forEach(item => {
           const menuName = item.menu_items?.name || 'Unknown Item';
-          
-          // For recap data
           if (recapMap.has(menuName)) {
             recapMap.set(menuName, recapMap.get(menuName)! + item.quantity);
           } else {
             recapMap.set(menuName, item.quantity);
           }
-
-          // For detailed orders
-          detailedOrdersData.push({
-            id: `${order.id}-${Math.random()}`,
-            child_name: order.child_name || '',
-            child_class: order.child_class || '',
-            menu_name: menuName,
-            item_code: generateItemCode(menuName),
-            quantity: item.quantity,
-            kitchen_check: false, // Default values, can be extended later
-            homeroom_check: false,
-            delivery_date: order.delivery_date,
-            total_amount: order.total_amount || 0,
-            payment_status: order.payment_status || 'pending',
-            order_items: [item]
-          });
         });
       });
 
@@ -484,11 +466,9 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
                     <th className="border border-gray-300 px-4 py-2 text-left">Nomor Urut</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Nama Siswa</th>
                     <th className="border border-gray-300 px-4 py-2 text-left">Kelas</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Nama Pesanan</th>
-                    <th className="border border-gray-300 px-4 py-2 text-left">Kode Item</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Jumlah</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Ceklist Dapur</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Ceklist Walikelas</th>
+                    <th className="border border-gray-300 px-4 py-2 text-left">Detail Pesanan</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center">Status</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -504,29 +484,25 @@ export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
                         {order.child_class}
                       </td>
                       <td className="border border-gray-300 px-4 py-2">
-                        {order.menu_name}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
-                        {order.item_code}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        {order.quantity}
+                        {order.order_items.map((item, idx) => (
+                          <div key={idx} className="text-sm">
+                            {item.quantity}x {item.menu_items?.name || 'Unknown Item'}
+                          </div>
+                        ))}
                       </td>
                       <td className="border border-gray-300 px-4 py-2 text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={order.kitchen_check} 
-                          readOnly
-                          className="h-4 w-4"
-                        />
+                        <span className={cn(
+                          "px-2 py-1 rounded-full text-xs font-medium",
+                          order.payment_status === 'paid' ? "text-green-600 bg-green-50" :
+                          order.payment_status === 'pending' ? "text-yellow-600 bg-yellow-50" :
+                          order.payment_status === 'failed' ? "text-red-600 bg-red-50" :
+                          "text-gray-600 bg-gray-50"
+                        )}>
+                          {getPaymentStatusLabel(order.payment_status)}
+                        </span>
                       </td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={order.homeroom_check} 
-                          readOnly
-                          className="h-4 w-4"
-                        />
+                      <td className="border border-gray-300 px-4 py-2 text-right">
+                        Rp {order.total_amount.toLocaleString('id-ID')}
                       </td>
                     </tr>
                   ))}
