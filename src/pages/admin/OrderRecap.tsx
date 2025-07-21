@@ -40,7 +40,7 @@ interface OrderDetailData {
 }
 
 interface OrderRecapProps {
-  onExportData?: (data: any[]) => void;
+  onExportData?: (data: MenuRecapData[]) => void;
 }
 
 export const OrderRecap = ({ onExportData }: OrderRecapProps) => {
