@@ -5,13 +5,14 @@ interface DetailOrder {
   id: string;
   child_name: string;
   child_class: string;
+  menu_name: string;
+  item_code: string;
+  quantity: number;
+  kitchen_check: boolean;
+  homeroom_check: boolean;
+  delivery_date: string;
   total_amount: number;
   payment_status: string;
-  delivery_date: string;
-  order_items: {
-    quantity: number;
-    menu_items: { name: string } | null;
-  }[];
 }
 
 interface DetailOrdersPrintProps {
@@ -85,7 +86,7 @@ export const DetailOrdersPrint: React.FC<DetailOrdersPrintProps> = ({
             }
             th, td { 
               border: 1px solid #000; 
-              padding: 3px; 
+              padding: 8px; 
               text-align: left; 
             }
             th { 
@@ -94,10 +95,6 @@ export const DetailOrdersPrint: React.FC<DetailOrdersPrintProps> = ({
             }
             .text-center { text-align: center; }
             .text-right { text-align: right; }
-            .order-item { 
-              font-size: 90%; 
-              margin: 2px 0; 
-            }
             .status-paid { color: green; }
             .status-pending { color: orange; }
             .summary { 
@@ -124,29 +121,31 @@ export const DetailOrdersPrint: React.FC<DetailOrdersPrintProps> = ({
           <table>
             <thead>
               <tr>
+                <th>Nomor Urut</th>
                 <th>Nama Siswa</th>
                 <th>Kelas</th>
-                <th>Tanggal Katering</th>
-                <th>Detail Pesanan</th>
-                <th class="text-center">Status</th>
-                <th class="text-right">Total</th>
+                <th>Nama Pesanan</th>
+                <th>Kode Item</th>
+                <th class="text-center">Jumlah</th>
+                <th class="text-center">Ceklist Dapur</th>
+                <th class="text-center">Ceklist Walikelas</th>
               </tr>
             </thead>
             <tbody>
-              ${data.map(order => `
+              ${data.map((order, index) => `
                 <tr>
+                  <td class="text-center">${index + 1}</td>
                   <td>${order.child_name}</td>
                   <td>${order.child_class}</td>
-                  <td>${new Date(order.delivery_date).toLocaleDateString('id-ID')}</td>
-                  <td>
-                    ${order.order_items.map(item => 
-                      `<div class="order-item">${item.quantity}x ${item.menu_items?.name || 'Unknown Item'}</div>`
-                    ).join('')}
+                  <td>${order.menu_name}</td>
+                  <td>${order.item_code}</td>
+                  <td class="text-center">${order.quantity}</td>
+                  <td class="text-center">
+                    <input type="checkbox" ${order.kitchen_check ? 'checked' : ''} />
                   </td>
-                  <td class="text-center status-${order.payment_status}">
-                    ${getPaymentStatusText(order.payment_status)}
+                  <td class="text-center">
+                    <input type="checkbox" ${order.homeroom_check ? 'checked' : ''} />
                   </td>
-                  <td class="text-right">Rp ${order.total_amount.toLocaleString('id-ID')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -154,9 +153,9 @@ export const DetailOrdersPrint: React.FC<DetailOrdersPrintProps> = ({
           
           <div class="summary">
             <h3>RINGKASAN</h3>
-            <p>Total Pesanan: ${data.length}</p>
-            <p>Pesanan Lunas: ${paidOrders}</p>
-            <p>Total Nilai: Rp ${totalAmount.toLocaleString('id-ID')}</p>
+            <p>Total Detail Pesanan: ${data.length}</p>
+            <p>Total Jumlah: ${data.reduce((sum, item) => sum + item.quantity, 0)}</p>
+            <p>Jumlah Siswa: ${new Set(data.map(item => item.child_name)).size}</p>
           </div>
           
           <script>
