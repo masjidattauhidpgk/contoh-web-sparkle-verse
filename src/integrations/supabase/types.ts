@@ -283,79 +283,6 @@ export type Database = {
           },
         ]
       }
-      order_line_items: {
-        Row: {
-          child_class: string | null
-          child_id: string | null
-          child_name: string
-          created_at: string | null
-          delivery_date: string
-          id: string
-          menu_item_id: string
-          notes: string | null
-          order_date: string
-          order_id: string
-          quantity: number
-          total_price: number | null
-          unit_price: number
-          updated_at: string | null
-        }
-        Insert: {
-          child_class?: string | null
-          child_id?: string | null
-          child_name: string
-          created_at?: string | null
-          delivery_date: string
-          id?: string
-          menu_item_id: string
-          notes?: string | null
-          order_date?: string
-          order_id: string
-          quantity?: number
-          total_price?: number | null
-          unit_price: number
-          updated_at?: string | null
-        }
-        Update: {
-          child_class?: string | null
-          child_id?: string | null
-          child_name?: string
-          created_at?: string | null
-          delivery_date?: string
-          id?: string
-          menu_item_id?: string
-          notes?: string | null
-          order_date?: string
-          order_id?: string
-          quantity?: number
-          total_price?: number | null
-          unit_price?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_line_items_child_id_fkey"
-            columns: ["child_id"]
-            isOneToOne: false
-            referencedRelation: "children"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_line_items_menu_item_id_fkey"
-            columns: ["menu_item_id"]
-            isOneToOne: false
-            referencedRelation: "menu_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_line_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       order_schedules: {
         Row: {
           created_at: string
@@ -402,6 +329,7 @@ export type Database = {
           child_id: string | null
           child_name: string | null
           created_at: string
+          created_by: string
           delivery_date: string | null
           id: string
           midtrans_order_id: string | null
@@ -424,6 +352,7 @@ export type Database = {
           child_id?: string | null
           child_name?: string | null
           created_at?: string
+          created_by: string
           delivery_date?: string | null
           id?: string
           midtrans_order_id?: string | null
@@ -446,6 +375,7 @@ export type Database = {
           child_id?: string | null
           child_name?: string | null
           created_at?: string
+          created_by?: string
           delivery_date?: string | null
           id?: string
           midtrans_order_id?: string | null
@@ -669,6 +599,18 @@ export type Database = {
       }
     }
     Functions: {
+      current_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -683,6 +625,22 @@ export type Database = {
       }
       has_role: {
         Args: { _user_id: string; _role: string }
+        Returns: boolean
+      }
+      is_admin_or_cashier: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_current_user_role: {
+        Args: { roles: string[] }
+        Returns: boolean
+      }
+      is_special_admin_email: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_special_cashier_email: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       validate_user_input: {
