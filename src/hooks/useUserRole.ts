@@ -28,7 +28,23 @@ export const useUserRole = () => {
     try {
       console.log('useUserRole: Fetching role for user', user.id, user.email);
       
-      // First try to get from user_roles table
+      // First check for special admin/cashier emails as fallback
+      const adminEmails = ['admin@admin.com'];
+      const cashierEmails = ['kasir@kasir.com'];
+      
+      if (user.email && adminEmails.includes(user.email)) {
+        console.log('useUserRole: Setting admin role for known admin email');
+        setRole('admin');
+        setLoading(false);
+        return;
+      } else if (user.email && cashierEmails.includes(user.email)) {
+        console.log('useUserRole: Setting cashier role for known cashier email');
+        setRole('cashier');
+        setLoading(false);
+        return;
+      }
+
+      // Try to get from user_roles table first
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -54,26 +70,14 @@ export const useUserRole = () => {
           console.log('useUserRole: Setting role from profiles:', profileData.role);
           setRole(profileData.role);
         } else {
-          // Special check for known admin/cashier emails
-          const adminEmails = ['admin@admin.com'];
-          const cashierEmails = ['kasir@kasir.com'];
-          
-          if (user.email && adminEmails.includes(user.email)) {
-            console.log('useUserRole: Setting admin role for known admin email');
-            setRole('admin');
-          } else if (user.email && cashierEmails.includes(user.email)) {
-            console.log('useUserRole: Setting cashier role for known cashier email');
-            setRole('cashier');
-          } else {
-            console.log('useUserRole: Defaulting to parent role');
-            setRole('parent');
-          }
+          console.log('useUserRole: Defaulting to parent role');
+          setRole('parent');
         }
       }
     } catch (error) {
       console.error('useUserRole: Error fetching user role:', error);
       
-      // Special fallback for known emails
+      // Emergency fallback for known emails
       if (user.email === 'admin@admin.com') {
         console.log('useUserRole: Emergency fallback to admin for admin@admin.com');
         setRole('admin');
@@ -88,7 +92,12 @@ export const useUserRole = () => {
     }
   };
 
-  console.log('useUserRole: Current state - role:', role, 'loading:', loading, 'isAdmin:', role === 'admin');
+  console.log('useUserRole: Current state - role:', role, 'loading:', loading, 'isAdmin:', role === 'admin', 'isCashier:', role === 'cashier');
 
-  return { role, loading, isAdmin: role === 'admin' };
+  return { 
+    role, 
+    loading, 
+    isAdmin: role === 'admin',
+    isCashier: role === 'cashier' || role === 'admin' // Admin can also act as cashier
+  };
 };
