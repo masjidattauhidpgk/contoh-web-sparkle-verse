@@ -32,11 +32,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (mounted) {
           console.log('Auth state changed:', event, session?.user?.email || 'no user');
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // When user signs in, ensure their role is properly set in JWT claims
+          if (event === 'SIGNED_IN' && session?.user) {
+            await ensureUserRoleInClaims(session.user);
+          }
+          
           setLoading(false);
         }
       }
@@ -53,6 +59,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Initial session:', session?.user?.email || 'no session');
           setSession(session);
           setUser(session?.user ?? null);
+          
+          // Ensure role is properly set for existing session
+          if (session?.user) {
+            await ensureUserRoleInClaims(session.user);
+          }
+          
           setLoading(false);
         }
       } catch (error) {
@@ -70,6 +82,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  const ensureUserRoleInClaims = async (user: User) => {
+    try {
+      console.log('AuthProvider: Ensuring role in claims for user:', user.email);
+      
+      // Determine role based on email or database
+      let role = 'parent'; // default
+      
+      if (user.email === 'admin@admin.com') {
+        role = 'admin';
+      } else if (user.email === 'kasir@kasir.com') {
+        role = 'cashier';
+      } else {
+        // Check user_roles table
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (roleData?.role) {
+          role = roleData.role;
+        }
+      }
+
+      console.log('AuthProvider: Determined role:', role, 'for user:', user.email);
+
+      // Update user metadata to include role
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { role: role }
+      });
+
+      if (updateError) {
+        console.error('AuthProvider: Error updating user metadata:', updateError);
+      } else {
+        console.log('AuthProvider: Successfully updated user metadata with role:', role);
+      }
+
+    } catch (error) {
+      console.error('AuthProvider: Error in ensureUserRoleInClaims:', error);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {

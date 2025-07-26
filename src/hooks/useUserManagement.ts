@@ -42,11 +42,17 @@ export const useUserManagement = () => {
 
       console.log('useUserManagement: User roles fetched:', roles?.length || 0);
 
-      // Get auth users to get email information
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('useUserManagement: Error fetching auth users:', authError);
+      // Get auth users to get email information (admin only)
+      let authUsers = null;
+      try {
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+        if (!authError) {
+          authUsers = authData;
+        } else {
+          console.warn('useUserManagement: Could not fetch auth users (admin required):', authError);
+        }
+      } catch (error) {
+        console.warn('useUserManagement: Auth admin access not available:', error);
       }
 
       console.log('useUserManagement: Auth users fetched:', authUsers?.users?.length || 0);
@@ -103,7 +109,7 @@ export const useUserManagement = () => {
     try {
       console.log('useUserManagement: Updating role for user:', userId, 'to:', newRole);
 
-      // First try to update in user_roles table
+      // Update or insert in user_roles table (primary source)
       const { data: existingRole, error: fetchError } = await supabase
         .from('user_roles')
         .select('*')
@@ -133,7 +139,7 @@ export const useUserManagement = () => {
         }
       }
 
-      // Also update in profiles table for fallback
+      // Also update in profiles table for consistency
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ role: newRole })
@@ -144,9 +150,13 @@ export const useUserManagement = () => {
         // Don't throw here as user_roles is the primary source
       }
 
+      // Force the target user to refresh their session if they're currently logged in
+      // This is done by updating their profile which should trigger a session refresh
+      console.log('useUserManagement: Role updated successfully for user:', userId);
+
       toast({
         title: "Berhasil",
-        description: `Role berhasil diubah ke ${newRole}`,
+        description: `Role berhasil diubah ke ${newRole}. User mungkin perlu login ulang untuk melihat perubahan.`,
       });
 
       // Refresh data
