@@ -599,52 +599,16 @@ export type Database = {
       }
     }
     Functions: {
-      current_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      current_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_order_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_user_role: {
-        Args: Record<PropertyKey, never> | { _user_id?: string }
-        Returns: string
-      }
-      has_role: {
-        Args: { _user_id: string; _role: string }
-        Returns: boolean
-      }
-      is_admin_or_cashier: {
+      is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      is_current_user_role: {
-        Args: { roles: string[] }
-        Returns: boolean
-      }
-      is_special_admin_email: {
+      is_cashier: {
         Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_special_cashier_email: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      validate_user_input: {
-        Args: { input_text: string }
         Returns: boolean
       }
     }
