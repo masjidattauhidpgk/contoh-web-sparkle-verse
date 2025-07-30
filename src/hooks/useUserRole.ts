@@ -53,6 +53,11 @@ export const useUserRole = () => {
         if (roleData?.role) {
           console.log('useUserRole: Setting role from user_roles:', roleData.role);
           determinedRole = roleData.role;
+        } else if (roleError?.code === 'PGRST116') {
+          // No role found, create default parent role
+          console.log('useUserRole: No role found, creating default parent role');
+          await createUserRole('parent');
+          determinedRole = 'parent';
         } else {
           // Fallback: try to get from profiles table
           const { data: profileData, error: profileError } = await supabase
@@ -73,10 +78,11 @@ export const useUserRole = () => {
       // Set the role in state
       setRole(determinedRole);
 
-      // Update JWT claims by refreshing the session to ensure RLS policies work
-      console.log('useUserRole: Updating JWT claims with role:', determinedRole);
-      await updateUserRoleInDatabase(determinedRole);
-      await refreshSessionWithRole(determinedRole);
+      // For special emails, ensure they have the correct role in database
+      if ((user.email === 'admin@admin.com' && determinedRole === 'admin') ||
+          (user.email === 'kasir@kasir.com' && determinedRole === 'cashier')) {
+        await ensureSpecialEmailRole(determinedRole);
+      }
 
     } catch (error) {
       console.error('useUserRole: Error fetching user role:', error);
@@ -85,24 +91,56 @@ export const useUserRole = () => {
       if (user.email === 'admin@admin.com') {
         console.log('useUserRole: Emergency fallback to admin for admin@admin.com');
         setRole('admin');
-        await updateUserRoleInDatabase('admin');
-        await refreshSessionWithRole('admin');
+        await ensureSpecialEmailRole('admin');
       } else if (user.email === 'kasir@kasir.com') {
         console.log('useUserRole: Emergency fallback to cashier for kasir@kasir.com');
         setRole('cashier');
-        await updateUserRoleInDatabase('cashier');
-        await refreshSessionWithRole('cashier');
+        await ensureSpecialEmailRole('cashier');
       } else {
+        console.log('useUserRole: Emergency fallback to parent for regular user');
         setRole('parent');
+        await createUserRole('parent');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const updateUserRoleInDatabase = async (userRole: string) => {
+  const createUserRole = async (userRole: string) => {
     try {
-      // Update or insert in user_roles table
+      console.log('useUserRole: Creating role for user:', user?.id, 'role:', userRole);
+      
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: user?.id, role: userRole });
+
+      if (insertError) {
+        console.error('useUserRole: Error creating user role:', insertError);
+        // Don't throw error, just log it since the role is already set in state
+      } else {
+        console.log('useUserRole: Successfully created user role:', userRole);
+      }
+
+      // Also try to update profiles table for consistency (ignore errors)
+      try {
+        await supabase
+          .from('profiles')
+          .update({ role: userRole })
+          .eq('id', user?.id);
+      } catch (profileError) {
+        console.log('useUserRole: Could not update profile role (not critical):', profileError);
+      }
+
+    } catch (error) {
+      console.error('useUserRole: Error in createUserRole:', error);
+    }
+  };
+
+  const ensureSpecialEmailRole = async (userRole: string) => {
+    try {
+      console.log('useUserRole: Ensuring special email role:', userRole, 'for user:', user?.email);
+      
+      // Check if role exists
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('*')
@@ -110,39 +148,34 @@ export const useUserRole = () => {
         .single();
 
       if (existingRole) {
-        await supabase
-          .from('user_roles')
-          .update({ role: userRole })
-          .eq('user_id', user?.id);
+        // Update existing role if different
+        if (existingRole.role !== userRole) {
+          await supabase
+            .from('user_roles')
+            .update({ role: userRole })
+            .eq('user_id', user?.id);
+          console.log('useUserRole: Updated existing role to:', userRole);
+        }
       } else {
+        // Create new role
         await supabase
           .from('user_roles')
           .insert({ user_id: user?.id, role: userRole });
+        console.log('useUserRole: Created new role:', userRole);
       }
 
-      // Also update profiles table for consistency
-      await supabase
-        .from('profiles')
-        .update({ role: userRole })
-        .eq('id', user?.id);
-
-      console.log('useUserRole: Updated role in database:', userRole);
-    } catch (error) {
-      console.error('useUserRole: Error updating role in database:', error);
-    }
-  };
-
-  const refreshSessionWithRole = async (userRole: string) => {
-    try {
-      // Refresh the session to update JWT claims
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('useUserRole: Error refreshing session:', error);
-      } else {
-        console.log('useUserRole: Session refreshed with role:', userRole);
+      // Also update profiles table for consistency (ignore errors)
+      try {
+        await supabase
+          .from('profiles')
+          .update({ role: userRole })
+          .eq('id', user?.id);
+      } catch (profileError) {
+        console.log('useUserRole: Could not update profile role (not critical):', profileError);
       }
+
     } catch (error) {
-      console.error('useUserRole: Error in refreshSessionWithRole:', error);
+      console.error('useUserRole: Error in ensureSpecialEmailRole:', error);
     }
   };
 
